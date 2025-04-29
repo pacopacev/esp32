@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>ESP32 LED Control - Login</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f0f0f0;
+      text-align: center;
+      margin-top: 100px;
+    }
+
+    #login, #control {
+      display: none;
+    }
+
+    input, button {
+      padding: 12px;
+      font-size: 16px;
+      margin: 10px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+    }
+
+    button {
+      cursor: pointer;
+      border: none;
+      color: white;
+    }
+
+    .on-active {
+      background-color: green;
+    }
+
+    .on-inactive {
+      background-color: gray;
+    }
+
+    .off-active {
+      background-color: red;
+    }
+
+    .off-inactive {
+      background-color: gray;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="login">
+    <h2>Login</h2>
+    <input type="text" id="username" placeholder="Username"><br>
+    <input type="password" id="password" placeholder="Password"><br>
+    <button onclick="authenticate()">Login</button>
+    <p id="loginError" style="color:red;"></p>
+  </div>
+
+  <div id="control">
+    <h1>ESP32 LED Control</h1>
+    <button id="btnOn" onclick="controlLED(1)">Turn ON</button>
+    <button id="btnOff" onclick="controlLED(0)">Turn OFF</button>
+  </div>
+
+  <script>
+    const USERNAME = "admin";
+    const PASSWORD = "admin";
+
+    const token = "y4CSS2wOhOA9BqfqBMy33xXh9vdbvTd6";
+    const pin = "V1";
+
+    document.getElementById("login").style.display = "block";
+
+    function authenticate() {
+      const u = document.getElementById("username").value;
+      const p = document.getElementById("password").value;
+
+      if (u === USERNAME && p === PASSWORD) {
+        document.getElementById("login").style.display = "none";
+        document.getElementById("control").style.display = "block";
+        updateButtonStates();
+      } else {
+        document.getElementById("loginError").innerText = "Invalid credentials!";
+      }
+    }
+
+    function controlLED(value) {
+      fetch(`https://blynk.cloud/external/api/update?token=${token}&${pin}=${value}`)
+        .then(response => {
+          if (response.ok) {
+            updateButtonStates();
+          } else {
+            alert("Failed to control LED.");
+          }
+        })
+        .catch(error => {
+          alert("Error: " + error);
+        });
+    }
+
+    function updateButtonStates() {
+      fetch(`https://blynk.cloud/external/api/get?token=${token}&${pin}`)
+        .then(response => response.text())
+        .then(value => {
+          const ledState = parseInt(value);
+          const btnOn = document.getElementById("btnOn");
+          const btnOff = document.getElementById("btnOff");
+
+          if (ledState === 1) {
+            btnOn.className = "on-active";
+            btnOff.className = "off-inactive";
+          } else {
+            btnOn.className = "on-inactive";
+            btnOff.className = "off-active";
+          }
+        })
+        .catch(error => {
+          console.error("Failed to get LED state:", error);
+        });
+    }
+
+    // Optional: auto-refresh LED state every 5 seconds
+    setInterval(() => {
+      if (document.getElementById("control").style.display === "block") {
+        updateButtonStates();
+      }
+    }, 5000);
+  </script>
+
+</body>
+</html>
